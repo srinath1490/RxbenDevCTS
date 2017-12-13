@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Export" default="UpdateCSV" xmlns:ivy="antlib:org.apache.ivy.ant">
+	
+    <property file="build.properties"/>
+    <property environment="env"/>
+	<available classname="org.codehaus.groovy.ant.Groovy" property="groovy.installed"/>
+	<available classname="org.apache.ivy.Main" property="ivy.installed"/>
+    <tstamp>
+        <format property="todayDate" pattern="MM-dd-yyyy_HH-mm-ss" />
+        <format property="todayDate_only" pattern="MM-dd-yyyy" />
+    </tstamp>
+    <!-- subtract 2 days from Today -->
+    <tstamp>
+        <format property="twoDaysAgo" pattern="yyyy-MM-dd" offset="-2"/>
+    </tstamp>
+	
+	<path id="class.path">
+	  <pathelement location="${config}/lib"/>
+	  <fileset dir="./lib">
+		<include name="**/*.jar" />
+	  </fileset>
+	</path>
+	<import file="config/Export_script.xml" as="qa1"/>
+	
+	
+    <macrodef name="export_Object">
+        <attribute name="file"/>
+        <attribute name="object"/>
+        <attribute name="soql"/>
+        <attribute name="userName"/>
+        <attribute name="password"/>
+        <attribute name="serverURL"/>
+        <attribute name="batchSize"/>
+        <attribute name="limit"/> 
+
+        <sequential>
+            <echo message="Exporting @{object}"/>
+            <mkdir dir="exports"/>
+            <mkdir dir="logs/${todayDate_only}"/>           
+            <copy file="config/template-process-conf.xml" tofile="config/process-conf.xml" overwrite="true" failonerror="true"/>
+            <replace file="config/process-conf.xml">
+                <replacefilter token="_object_" value="@{object}"/>
+                <replacefilter token="_soql_" value="@{soql} LIMIT @{limit}"/>
+                <replacefilter token="_file_" value="exports/@{file}.csv"/>
+                <replacefilter token="_serverURL_" value="@{serverURL}"/>
+                <replacefilter token="_userName_" value="@{username}"/>
+                <replacefilter token="_password_" value="@{password}"/>
+                <replacefilter token="_batchSize_" value="@{batchSize}"/>
+                <replacefilter token="_logFile_" value="logs/${todayDate_only}/@{file}_log.csv"/>
+            </replace>
+            <java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="C:\RxBen\config\dataloader-39.0.0-uber.jar" failonerror="true">
+                <sysproperty key="salesforce.config.dir" value="config"/>
+                <arg line="process.name=@{object}"/>
+            </java>			
+        </sequential>	
+	
+    </macrodef>
+	
+    <macrodef name="update_Object">
+        <attribute name="file"/>
+        <attribute name="object"/>
+        <attribute name="userName"/>
+        <attribute name="password"/>
+        <attribute name="serverURL"/>
+        <attribute name="batchSize"/>
+        <attribute name="mappingFile"/>
+
+        <sequential>
+            <echo message="Updating @{object}"/>
+            <mkdir dir="exports"/>
+            <mkdir dir="logs/${todayDate_only}"/>
+            <copy file="config/template-process-conf_update.xml" tofile="config/process-conf.xml" overwrite="true" failonerror="true"/>
+            <replace file="config/process-conf.xml">
+                <replacefilter token="_object_" value="@{object}"/>
+                <replacefilter token="_file_" value="exports/@{file}updated.csv"/>
+                <replacefilter token="_serverURL_" value="@{serverURL}"/>
+                <replacefilter token="_userName_" value="@{username}"/>
+                <replacefilter token="_password_" value="@{password}"/>
+                <replacefilter token="_batchSize_" value="@{batchSize}"/>
+                <replacefilter token="_logFile_" value="logs/${todayDate_only}/@{file}_log.csv"/>
+                <replacefilter token="_opSuccess_" value="logs/${todayDate_only}/@{file}_log_Success.csv"/>
+                <replacefilter token="_opError_" value="logs/${todayDate_only}/@{file}_log_error.csv"/>
+                <replacefilter token="_mappingFile" value="@{mappingFile}"/>
+            </replace>
+            <java classname="com.salesforce.dataloader.process.ProcessRunner" classpath="C:\CLI\CLI automate\config\dataloader-39.0.0-uber.jar" failonerror="true">
+                <sysproperty key="salesforce.config.dir" value="config"/>
+                <arg line="process.name=@{object}"/>
+            </java>			
+        </sequential>
+    </macrodef>	
+	
+	
+	<target name="ExportCSV" >				
+			
+			<antcall target="Pharmacy_Advisor__c" />
+			<antcall target="Rx_Quality_Assurance_Review_Project__c" />			
+			<antcall target="Process_Optimization_Project__c" />
+			<antcall target="Product_Helpbox__c" />
+			<!--
+			<antcall target="Outreach_Aetna_Retail_Prescription__c" />
+			-->
+			
+			
+	</target>
+	
+	<target name ="ReplaceCSV">
+		<taskdef  name="groovy" classname="org.codehaus.groovy.ant.Groovy"/>					
+			<groovy>	
+			
+			String Vendorphone="987654321"
+			String Effectivedate="09/09/2000"
+			String DisVendor="AAAAAAAABBBBBCD"
+			new File("C://RxBen//exports//Pharmacy_Advisor__c_Exportupdated.csv").withWriter {			
+			new File("C://RxBen//exports//Pharmacy_Advisor__c_Export.csv").splitEachLine(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*\$)") { ID, CUSTOM_DISEASE_VENDOR_PHONE_NUMBER__C, EFFECTIVE_DATE__C, WHAT_IS_DISEASE_VENDOR__C  ->
+			it.println "${ID},${Vendorphone},${Effectivedate},${DisVendor}"				
+			}			
+			}
+			
+			def Description="AAAABBBB"
+			def prjctSummary="ZZZZYYYY"
+			
+			new File("C://RxBen//exports//Rx_Quality_Assurance_Review_Project__c_Exportupdated.csv").withWriter {			
+			new File("C://RxBen//exports//Rx_Quality_Assurance_Review_Project__c_Export.csv").splitEachLine(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*\$)") { ID, ISSUE_CASE_NEEDED__C ->
+			def Id="${ID}"		
+			it.println "${ID},${Description},${prjctSummary}"	
+			}			
+			}
+			
+			def Reason="ZZZZYYYY"
+			new File("C://RxBen//exports//Process_Optimization_Project__c_Exportupdated.csv").withWriter {			
+			new File("C://RxBen//exports//Process_Optimization_Project__c_Export.csv").splitEachLine(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*\$)") { ID, ABX_PROJECT__C ->
+			def Id="${ID}"		
+			it.println "${ID},${Reason}"	
+			}			
+			}
+			
+			def Prdct_Description="AAAABBBB"
+			def Justification="ZZZZYYYY"
+			new File("C://RxBen//exports//Product_Helpbox__c_Exportupdated.csv").withWriter {			
+			new File("C://RxBen//exports//Product_Helpbox__c_Export.csv").splitEachLine(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*\$)") { ID, URGENT__C ->				
+			it.println "${ID},${Prdct_Description},${Justification}"	
+			}			
+			}
+			
+			<!--
+			def Drug_Name="AAAA"
+			def Member_Firstname="BBBB"
+			def Member_Lastname="CCCC"
+			new File("C://RxBen//exports//Outreach_Aetna_Retail_Prescription__c_Exportupdated.csv").withWriter {			
+			new File("C://RxBen//exports//Outreach_Aetna_Retail_Prescription__c_Export.csv").splitEachLine(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*\$)") { ID, RX_FILL_DATE__C ->				
+			it.println "${ID},${Drug_Name},${Member_Firstname},${Member_Lastname}"	
+			}			
+			}
+			-->
+			</groovy>		
+			
+	</target>
+	
+	<macrodef name="Replace_Header">
+        <attribute name="file"/>
+        <attribute name="header"/>
+        <attribute name="pattern"/>        
+		 <sequential>
+		 <mkdir dir="exports"/>			
+			<replaceregexp replace="@{header}" byline="false" file="exports/@{file}updated.csv">				
+				<regexp pattern="@{pattern}"/>
+			</replaceregexp>							
+		 </sequential>
+	</macrodef>
+	
+	<target name="HeaderEdit" >							
+		<antcall target="Header_Edit_Pharmacy_Advisor__c" />			
+		<antcall target="Header_Edit_Rx_Quality_Assurance_Review_Project__c" />
+		<antcall target="Header_Edit_Process_Optimization_Project__c" />
+		<antcall target="Header_Edit_Product_Helpbox__c" />
+		<!--
+		<antcall target="Header_Edit_Outreach_Aetna_Retail_Prescription__c" />
+		-->
+	</target>
+	
+	<target name ="UpdateCSV" depends="ExportCSV,ReplaceCSV,HeaderEdit">
+		
+		<antcall target="Update_Pharmacy_Advisor__c" />
+		<antcall target="Update_Rx_Quality_Assurance_Review_Project__c" />
+		<antcall target="Update_Process_Optimization_Project__c" />		
+		<antcall target="Update_Product_Helpbox__c" />
+		<!--
+		<antcall target="Update_Outreach_Aetna_Retail_Prescription__c" />
+		-->
+		
+		
+	</target>
+	
+</project>

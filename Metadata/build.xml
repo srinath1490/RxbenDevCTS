@@ -1,0 +1,26 @@
+<project name="Shivasoft Sandbox" default="SFDCFetch" basedir="." xmlns:sf="antlib:com.salesforce">
+    <property file="config/config.properties"/>
+    <property environment="env"/>
+	
+	<path id="class.path">
+	  <pathelement location="${config}/lib"/>
+	  <fileset dir="./lib">
+		<include name="**/*.jar" />
+	  </fileset>
+	</path>
+	
+	<taskdef resource="com/salesforce/antlib.xml" uri="antlib:com.salesforce">
+	<classpath>
+		<pathelement location="./config/lib/ant-salesforce.jar"/>
+	</classpath>
+	</taskdef>
+
+	<target name="SFDCFetch">
+	  <!-- Retrieve the contents into another directory -->
+	  <sf:retrieve username="${sf.username}"
+				   password="${sf.password}"
+				   serverurl="${sf.serverurl}"
+				   retrieveTarget="C:\Rxben\Retrive"
+				   unpackaged="C:\Rxben\Metadata\config\package.xml" />
+	</target>	
+</project>
